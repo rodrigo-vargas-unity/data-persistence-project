@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -12,7 +13,9 @@ public class MainManager : MonoBehaviour
 
     public Text ScoreText;
     public GameObject GameOverText;
-    
+    public Text BestScoreText;
+
+
     private bool m_Started = false;
     private int m_Points;
     
@@ -36,6 +39,13 @@ public class MainManager : MonoBehaviour
                 brick.onDestroyed.AddListener(AddPoint);
             }
         }
+
+        var highScorePlayer = MoreOneGameInstance.Instance.Players.OrderByDescending(x => x.Score).FirstOrDefault();
+
+        if (highScorePlayer == null)
+            return;
+
+        BestScoreText.text = $"Best Score : {highScorePlayer.Name} : {highScorePlayer.Score}";
     }
 
     private void Update()
@@ -54,7 +64,11 @@ public class MainManager : MonoBehaviour
             }
         }
         else if (m_GameOver)
-        {
+        {            
+            var highScorePlayer = MoreOneGameInstance.Instance.Players.OrderByDescending(x => x.Score).FirstOrDefault();
+
+            BestScoreText.text = $"Best Score : {highScorePlayer.Name} : {highScorePlayer.Score}";
+
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
@@ -64,12 +78,22 @@ public class MainManager : MonoBehaviour
 
     void AddPoint(int point)
     {
-        m_Points += point;
-        ScoreText.text = $"Score : {m_Points}";
+        MoreOneGameInstance.Instance.Player.Score += point;
+        ScoreText.text = $"Score : {MoreOneGameInstance.Instance.Player.Score}";
     }
 
     public void GameOver()
     {
+        MoreOneGameInstance.Instance.Players.Add(new Player()
+        {
+            Name = MoreOneGameInstance.Instance.Player.Name,
+            Score = MoreOneGameInstance.Instance.Player.Score
+        });
+
+        MoreOneGameInstance.Instance.SaveHighscores();
+
+        MoreOneGameInstance.Instance.Player.Score = 0;
+
         m_GameOver = true;
         GameOverText.SetActive(true);
     }
